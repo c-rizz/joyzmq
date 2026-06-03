@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "joyzmq"
+version = "0.1.0"
+description = "Dead-simple joystick/keyboard-over-ZMQ pub/sub for Linux"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["pyzmq"]
+
+[project.scripts]
+joyzmq-joystick = "joyzmq.cli:joystick_main"
+joyzmq-keyboard = "joyzmq.cli:keyboard_main"
+joyzmq-client = "joyzmq.cli:client_main"
+
+[tool.setuptools]
+packages = ["joyzmq"]
