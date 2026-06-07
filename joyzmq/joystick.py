@@ -13,6 +13,9 @@ using the standard Linux xpad mapping for Xbox-style controllers. Triggers
 the joystick exposes exactly the same set as the keyboard publisher.
 """
 
+import fcntl
+import glob
+import os
 import struct
 
 from .layout import neutral_state
@@ -39,6 +42,51 @@ _INVERTED_AXES = {"ly", "ry"}
 
 _TRIGGER_ON = 0.5  # normalised pull past which a trigger counts as pressed
 _HAT_ON = 0.5      # normalised hat deflection past which a d-pad dir is pressed
+
+_JSIOCGNAME_LEN = 128
+
+
+def _jsiocgname(length):
+    """Build the JSIOCGNAME(length) ioctl request number.
+
+    Equivalent to the C macro _IOC(_IOC_READ, 'j', 0x13, length).
+    """
+    return (2 << 30) | (length << 16) | (ord("j") << 8) | 0x13
+
+
+def joystick_name(device):
+    """Return the device's reported name (brand/model), or None if unavailable.
+
+    Uses the JSIOCGNAME ioctl. Returns None if the device can't be opened
+    (e.g. missing permissions) or reports no name.
+    """
+    try:
+        fd = os.open(device, os.O_RDONLY | os.O_NONBLOCK)
+    except OSError:
+        return None
+    try:
+        buf = bytearray(_JSIOCGNAME_LEN)
+        fcntl.ioctl(fd, _jsiocgname(_JSIOCGNAME_LEN), buf)
+        return buf.split(b"\x00", 1)[0].decode("utf-8", "replace") or None
+    except OSError:
+        return None
+    finally:
+        os.close(fd)
+
+
+def _js_index(path):
+    suffix = path.rsplit("js", 1)[-1]
+    return int(suffix) if suffix.isdigit() else 0
+
+
+def list_joysticks():
+    """List connected joysticks as (device_path, name_or_None) tuples.
+
+    Sorted by device number (js0, js1, ...). `name` comes from JSIOCGNAME and
+    is None when the device exists but its name can't be read.
+    """
+    devices = sorted(glob.glob("/dev/input/js*"), key=_js_index)
+    return [(dev, joystick_name(dev)) for dev in devices]
 
 
 class Joystick:

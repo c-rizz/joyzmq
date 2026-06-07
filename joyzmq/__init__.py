@@ -8,7 +8,7 @@ from .client import (
     recv_states,
     run_client,
 )
-from .joystick import Joystick
+from .joystick import Joystick, joystick_name, list_joysticks
 from .keyboard import Keyboard
 from .keyboard_server import run_keyboard_server
 from .layout import AXES, BUTTONS, neutral_state
@@ -16,6 +16,8 @@ from .server import run_server
 
 __all__ = [
     "Joystick",
+    "list_joysticks",
+    "joystick_name",
     "Keyboard",
     "run_server",
     "run_keyboard_server",
