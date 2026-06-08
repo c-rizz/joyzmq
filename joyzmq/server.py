@@ -1,6 +1,7 @@
 """Joystick publisher: reads a joystick and PUBlishes its state over ZMQ."""
 
 import json
+import os
 
 import zmq
 
@@ -30,9 +31,17 @@ def run_server(device="/dev/input/js0", bind="tcp://*:5666", topic="joy"):
     """Read `device` and publish the full joystick state on every event.
 
     The complete state is sent on each event, so a subscriber that joins late
-    is fully in sync after the next stick movement or button press.
+    is fully in sync after the next stick movement or button press. Exits with
+    a clear message (no traceback) if the device is missing, unreadable, or
+    disconnects.
     """
     _print_joysticks(device)
+    if not os.path.exists(device):
+        print(f"[joyzmq] '{device}' is not available; not starting the publisher. "
+              f"Plug in a controller (and 'sudo modprobe joydev' if needed), or "
+              f"pass --device with one of the paths listed above.")
+        return
+
     ctx = zmq.Context.instance()
     sock = ctx.socket(zmq.PUB)
     sock.bind(bind)
@@ -43,5 +52,12 @@ def run_server(device="/dev/input/js0", bind="tcp://*:5666", topic="joy"):
                 js.read_event()
                 payload = json.dumps(js.state())
                 sock.send_string(f"{topic} {payload}")
+    except PermissionError:
+        print(f"[joyzmq] no permission to read '{device}' -- add your user to the "
+              f"'input' group (sudo usermod -aG input $USER), then re-login.")
+    except EOFError:
+        print(f"[joyzmq] joystick '{device}' disconnected; exiting.")
+    except OSError as e:
+        print(f"[joyzmq] error reading '{device}': {e}")
     finally:
         sock.close(linger=0)
