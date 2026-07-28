@@ -19,6 +19,7 @@ The two front (thumb) clusters are exposed by compass direction:
 
 import json
 import threading
+import time
 
 import zmq
 
@@ -46,11 +47,12 @@ class GamepadState:
                 ...
     """
 
-    __slots__ = ("axes", "buttons")
+    __slots__ = ("axes", "buttons", "_init_time")
 
     def __init__(self, state):
         self.axes = state["axes"]
         self.buttons = state["buttons"]
+        self._init_time = time.monotonic()
 
     def __getattr__(self, name):
         # reached only for names that aren't slots; guard against recursion
@@ -71,6 +73,10 @@ class GamepadState:
     def __repr__(self):
         axes = " ".join(f"{n}:{v:+.2f}" for n, v in self.axes.items())
         return f"<GamepadState {axes} | {' '.join(self.pressed())}>"
+    
+    def age(self):
+        """Return the age of the stored state in seconds."""
+        return time.monotonic() - self._init_time
 
 
 def _parse(msg):
@@ -123,9 +129,9 @@ class GamepadClient:
     def __init__(self, connect="tcp://localhost:5666", topic="joy", recv_timeout_ms=100):
         ctx = zmq.Context.instance()
         sock = ctx.socket(zmq.SUB)
-        sock.connect(connect)
         sock.setsockopt_string(zmq.SUBSCRIBE, topic)
         sock.setsockopt(zmq.RCVTIMEO, recv_timeout_ms)  # so the thread can check _stop
+        sock.connect(connect)
         self._sock = sock
         self._lock = threading.Lock()
         self._latest = GamepadState(neutral_state())
@@ -208,11 +214,14 @@ class GamepadTeleop:
 
 def _format(pad):
     axes_str = " ".join(f"{n}:{v:+.2f}" for n, v in pad.axes.items())
-    return f"{axes_str}  |  {' '.join(pad.pressed())}"
+    return f"{axes_str}  |  {' '.join(pad.pressed())} | {pad.age():.2f}s"
 
 
 def run_client(connect="tcp://localhost:5666", topic="joy"):
     """Subscribe to gamepad state and print the latest on a single line."""
     print(f"[joyzmq] subscribing to {connect} (topic '{topic}')")
-    for pad in recv_states(connect, topic):
+    gamepad = GamepadTeleop(connect=connect, topic=topic)
+    while True:
+        pad = gamepad.poll()
         print(f"\r{_format(pad):<80}", end="", flush=True)
+        time.sleep(0.1)

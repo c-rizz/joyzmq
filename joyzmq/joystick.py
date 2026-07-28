@@ -118,6 +118,10 @@ class Joystick:
             self._fd.close()
             self._fd = None
 
+    def fileno(self):
+        """Underlying device file descriptor, for select()/poll() waits."""
+        return self._fd.fileno()
+
     def __enter__(self):
         return self.open()
 

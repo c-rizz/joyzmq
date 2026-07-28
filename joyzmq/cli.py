@@ -14,9 +14,13 @@ def joystick_main():
     p.add_argument("--device", default="/dev/input/js0", help="joystick device")
     p.add_argument("--bind", default="tcp://*:5666", help="ZMQ bind address")
     p.add_argument("--topic", default="joy", help="ZMQ topic prefix")
+    p.add_argument(
+        "--rate", type=float, default=20.0,
+        help="idle heartbeat rate in Hz (republish state when no event; <=0 disables)",
+    )
     args = p.parse_args()
     try:
-        run_server(args.device, args.bind, args.topic)
+        run_server(args.device, args.bind, args.topic, args.rate)
     except KeyboardInterrupt:
         print()
 

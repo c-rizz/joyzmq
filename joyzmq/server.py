@@ -2,6 +2,8 @@
 
 import json
 import os
+import select
+import time
 
 import zmq
 
@@ -27,13 +29,17 @@ def _print_joysticks(selected):
               f"--device, e.g.  joyzmq-joystick --device {others[0]}")
 
 
-def run_server(device="/dev/input/js0", bind="tcp://*:5666", topic="joy"):
-    """Read `device` and publish the full joystick state on every event.
+def run_server(device="/dev/input/js0", bind="tcp://*:5666", topic="joy", rate=20.0):
+    """Read `device` and publish the full joystick state.
 
-    The complete state is sent on each event, so a subscriber that joins late
-    is fully in sync after the next stick movement or button press. Exits with
-    a clear message (no traceback) if the device is missing, unreadable, or
-    disconnects.
+    The complete state is sent on every joystick event -- so a subscriber that
+    joins late is fully in sync after the next input, and no transient press is
+    missed -- and, when the joystick sits idle, at least `rate` times per second
+    as a heartbeat. The steady heartbeat lets a subscriber trust
+    `GamepadState.age()` as a real freshness/liveness measure rather than just
+    "time since the last input". Pass `rate <= 0` to disable heartbeats and only
+    publish on events (the original behaviour). Exits with a clear message (no
+    traceback) if the device is missing, unreadable, or disconnects.
     """
     _print_joysticks(device)
     if not os.path.exists(device):
@@ -42,14 +48,23 @@ def run_server(device="/dev/input/js0", bind="tcp://*:5666", topic="joy"):
               f"pass --device with one of the paths listed above.")
         return
 
+    period = 1.0 / rate if rate > 0 else None
     ctx = zmq.Context.instance()
     sock = ctx.socket(zmq.PUB)
     sock.bind(bind)
     print(f"[joyzmq] publishing {device} on {bind} (topic '{topic}')")
     try:
         with Joystick(device) as js:
+            fd = js.fileno()
             while True:
-                js.read_event()
+                if period is None:
+                    js.read_event()
+                else:
+                    # Wait for an event but no longer than one heartbeat period;
+                    # on timeout we republish the unchanged state to keep it fresh.
+                    ready, _, _ = select.select([fd], [], [], period)
+                    if ready:
+                        js.read_event()
                 payload = json.dumps(js.state())
                 sock.send_string(f"{topic} {payload}")
     except PermissionError:
