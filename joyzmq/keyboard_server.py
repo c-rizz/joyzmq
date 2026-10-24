@@ -18,21 +18,21 @@ _HELP = (
 
 
 def run_keyboard_server(bind="tcp://*:5666", topic="joy", rate=20.0, hold=0.5, ramp=2.0):
-    """Read the keyboard and publish the full state whenever it changes."""
+    """Read the keyboard and publish the full state at least `rate` times per second.
+
+    The state is republished even when unchanged, as a heartbeat, so a subscriber
+    can trust `GamepadState.age()` as a liveness measure.
+    """
     ctx = zmq.Context.instance()
     sock = ctx.socket(zmq.PUB)
     sock.bind(bind)
     print(f"[joyzmq] publishing keyboard on {bind} (topic '{topic}')")
     print(_HELP)
     period = 1.0 / rate
-    last_payload = None
     try:
         with Keyboard(hold=hold, ramp=ramp) as kb:
             while True:
                 kb.poll(period)
-                payload = json.dumps(kb.state())
-                if payload != last_payload:
-                    sock.send_string(f"{topic} {payload}")
-                    last_payload = payload
+                sock.send_string(f"{topic} {json.dumps(kb.state())}")
     finally:
         sock.close(linger=0)
