@@ -13,7 +13,7 @@ from .keyboard import Keyboard
 _HELP = (
     "  sticks: WASD (left) / arrows (right) -- ramp while held\n"
     "  face:   I=y K=a J=x L=b      d-pad: T=up G=down F=left H=right\n"
-    "  top:    Q=lb E=rb R=lt U=rt      quit: Ctrl-C"
+    "  top:    E=lt Q=lb O=rb U=rt      quit: Ctrl-C"
 )
 
 

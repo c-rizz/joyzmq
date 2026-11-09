@@ -78,13 +78,43 @@ joyzmq-keyboard                    # binds tcp://*:5666
 | right stick | `Up`/`Down` = ry, `Left`/`Right` = rx |
 | face (right) | `I`=y `K`=a `J`=x `L`=b |
 | d-pad (left) | `T`=up `G`=down `F`=left `H`=right |
-| top four | `Q`=lb `E`=rb `R`=lt `U`=rt |
+| top four | `E`=lt `Q`=lb `O`=rb `U`=rt |
 | quit | `Ctrl-C` |
 
 Stick keys **ramp**: while a direction key is held the axis moves toward `±1` at
 `--ramp` units/second (default `2.0`, i.e. full deflection in 0.5 s), and ramps
 back to `0` when released — so a quick tap nudges, a long hold goes full. Tune
 with `--ramp`.
+
+**Web page** (a gamepad or the keyboard of whatever machine runs the browser, plus cameras):
+
+```bash
+joyzmq-web                         # binds tcp://*:5666, page on http://127.0.0.1:8090
+joyzmq-web --cameras tcp://robot-pc:5700 --camera zed   # also show camzmq cameras
+joyzmq-web --cameras tcp://robot-pc:5700 --cameras tcp://127.0.0.1:5710  # from two publishers
+```
+
+Repeat `--cameras` for each camzmq publisher, and `--camera` for each camera
+to show (default: all of them); a camera is taken from whichever publisher has
+it, so its name must be unique among them.
+
+The page reads a gamepad through the browser's Gamepad API (its "standard"
+mapping lines up with the canonical layout), the keyboard with the same keys
+as `joyzmq-keyboard`, and on-screen sticks and buttons (drag and hold, by touch
+or mouse, several fingers at once), and posts the state to the server, which
+publishes it as the other publishers do. Touch works from a phone without the
+secure-context restriction that gamepads have. The gamepad is the one plugged into the browser's
+machine: no `/dev/input` permissions needed. Browsers only expose gamepads to
+secure contexts, so open the page as `http://localhost`; from another machine,
+forward the port (`ssh -L 8090:localhost:8090 robot-pc`).
+
+- **Deadman:** if the page goes silent for `--deadman` seconds (default 0.3:
+  tab closed or hidden, network down), the neutral state is published instead
+  of the last one, so a subscriber does not keep acting on a stale command.
+- **One controller:** one page drives at a time. Others watch, and can take
+  over with *take control*, or by posting after the controller went silent.
+- **Cameras:** `--cameras` needs `camzmq` installed; the page shows the images,
+  their age and the stream statistics.
 
 **Client** (same or another machine):
 

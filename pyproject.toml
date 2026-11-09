@@ -13,6 +13,7 @@ dependencies = ["pyzmq"]
 [project.scripts]
 joyzmq-joystick = "joyzmq.cli:joystick_main"
 joyzmq-keyboard = "joyzmq.cli:keyboard_main"
+joyzmq-web = "joyzmq.cli:web_main"
 joyzmq-client = "joyzmq.cli:client_main"
 
 [tool.setuptools]

@@ -14,7 +14,7 @@ Key mapping (emulating a gamepad):
     right stick   Up/Down = ry   Left/Right = rx
     face (right)  I=y  K=a  J=x  L=b
     d-pad (left)  T=up  G=down  F=left  H=right
-    top four      Q=lb  E=rb  R=lt  U=rt
+    top four      E=lt  Q=lb  O=rb  U=rt
     quit          Ctrl-C
 """
 
@@ -38,7 +38,7 @@ _AXIS_KEYS = {
 _BUTTON_KEYS = {
     "i": "y", "k": "a", "j": "x", "l": "b",            # face cluster (diamond)
     "t": "dpad_up", "g": "dpad_down", "f": "dpad_left", "h": "dpad_right",
-    "q": "lb", "e": "rb", "r": "lt", "u": "rt",         # the four on top
+    "e": "lt", "q": "lb", "o": "rb", "u": "rt",         # the four on top
 }
 
 _ARROWS = {0x41: "UP", 0x42: "DOWN", 0x43: "RIGHT", 0x44: "LEFT"}
