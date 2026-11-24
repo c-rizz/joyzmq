@@ -24,6 +24,7 @@ ZMQ like the other publishers do.
 <p align="center">
 <img src="docs/android-web.jpg" width="200"/>
 </p>
+
 ```
 uvx --from git+https://github.com/c-rizz/joyzmq --with git+https://github.com/c-rizz/camzmq \
     joyzmq-web --http-bind 0.0.0.0 --cameras tcp://127.0.0.1:5700
