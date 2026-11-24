@@ -21,9 +21,9 @@ change, so a client that connects late is in sync after the next input.
 Run the web page on the machine whose ZMQ consumer should receive the commands, and open it on the phone. It shows
 the camzmq cameras and an on-screen gamepad (two sticks, d-pad, face and bumper buttons), and publishes the state over
 ZMQ like the other publishers do.
-
-![Android screenshot](docs/android-web.jpg)
-
+<p align="center">
+<img src="docs/android-web.jpg" width="200"/>
+</p>
 ```
 uvx --from git+https://github.com/c-rizz/joyzmq --with git+https://github.com/c-rizz/camzmq \
     joyzmq-web --http-bind 0.0.0.0 --cameras tcp://127.0.0.1:5700
