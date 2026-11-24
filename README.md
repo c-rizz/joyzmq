@@ -2,6 +2,8 @@
 
 A dead-simple joystick/keyboard-over-ZMQ publisher/subscriber for Linux.
 
+## Overview
+
 - **Joystick publisher** reads a joystick (`/dev/input/jsX`) and publishes its state.
 - **Keyboard publisher** reads the keyboard and publishes the same kind of state.
 - **Client** subscribes and prints the latest state.
@@ -13,6 +15,30 @@ straight from the Linux kernel joystick API and the keyboard via the stdlib in
 raw terminal mode, so the only dependency is `pyzmq`. State is sent on every
 change, so a client that connects late is in sync after the next input.
 
+
+## Drive a robot from an Android phone, with nothing installed
+
+Run the web page on the machine whose ZMQ consumer should receive the commands, and open it on the phone. It shows
+the camzmq cameras and an on-screen gamepad (two sticks, d-pad, face and bumper buttons), and publishes the state over
+ZMQ like the other publishers do.
+
+![Android screenshot](docs/android-web.jpg)
+
+```
+uvx --from git+https://github.com/c-rizz/joyzmq --with git+https://github.com/c-rizz/camzmq \
+    joyzmq-web --http-bind 0.0.0.0 --cameras tcp://127.0.0.1:5700
+```
+
+Then open `http://<ip-of-that-machine>:8090` on the phone, on the same network. Drag the sticks and hold the buttons
+with several fingers at once. Leave out `--with` and `--cameras` for the controls alone.
+
+- Touch controls work over plain http. You can also use a gamepad connected to the phone usb port.
+- `--http-bind 0.0.0.0` has no authentication: anyone who can reach the port can send commands. Use it on a trusted
+  network.
+- Only one publisher can hold the ZMQ port (default `tcp://*:5666`) at a time; stop other joyzmq publishers first, or
+  pass another `--bind`.
+
+See [Web page](#use) below for the options.
 
 ## Quick Usage - No install
 
